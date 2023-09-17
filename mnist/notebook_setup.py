@@ -12,7 +12,7 @@ from importlib import reload
 
 from pathlib import Path
 
-TF_OPERATOR_COMMIT = "9238906"
+TF_OPERATOR_COMMIT = "v1.6.0"
 
 # add env default to google, we can override it.
 def notebook_setup(platform ='gcp'):
@@ -35,7 +35,7 @@ def notebook_setup(platform ='gcp'):
 
   # Installing the python packages locally doesn't appear to have them automatically
   # added the path so we need to manually add the directory
-  local_py_path = os.path.join(home, ".local/lib/python3.6/site-packages")
+  local_py_path = os.path.join(home, ".local/lib/python3.8/site-packages")
   tf_operator_py_path = os.path.join(clone_dir, "sdk/python")
 
   for p in [local_py_path, tf_operator_py_path]:
