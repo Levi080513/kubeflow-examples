@@ -10,7 +10,7 @@ import time
 import shutil
 import sys
 import pandas as pd
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow.python.lib.io import file_io
 
 #pylint: disable=no-name-in-module
@@ -43,15 +43,14 @@ def parse_arguments(argv):
                       help='tag of the model',
                       default='v1')
 
-  parser.add_argument('--bucket',
+  parser.add_argument('--start_date',
                       type=str,
-                      help='GCS bucket to store data and ML models',
-                      default='<your-bucket-name>')
-
-  parser.add_argument('--blob_path',
+                      help='111',
+                      default='2010-10-01')
+  parser.add_argument('--end_date',
                       type=str,
-                      help='GCS blob path where data is saved',
-                      default='data')
+                      help='222',
+                      default='2022-10-01')
 
   parser.add_argument('--kfp',
                       dest='kfp',
@@ -75,23 +74,19 @@ def run_training(argv=None):
   # parse args
   args = parse_arguments(sys.argv if argv is None else argv)
   logging.info('getting the ML model...')
-  model = getattr(models, args.model)(nr_predictors=24, nr_classes=2)
+  model = getattr(models, args.model)(nr_predictors=6, nr_classes=2)
 
   # get the data
   logging.info('getting the data...')
-  temp_folder = 'data'
-  if not os.path.exists(temp_folder):
-    os.mkdir(temp_folder)
-  file_path = os.path.join(temp_folder, 'data.csv')
-  storage_helper.download_blob(args.bucket, args.blob_path, file_path)
-  time_series = pd.read_csv(file_path)
+  data_file_path = os.path.join("/data", 'data_{}_{}.csv'.format(args.start_date, args.end_date))
+  time_series = pd.read_csv(data_file_path)
   training_test_data = preprocess.train_test_split(time_series, 0.8)
 
 
   # define training objective
   logging.info('defining the training objective...')
   sess = tf.Session()
-  feature_data = tf.placeholder("float", [None, 24])
+  feature_data = tf.placeholder("float", [None, 6])
   actual_classes = tf.placeholder("float", [None, 2])
 
   model = model.build_model(feature_data)
@@ -151,9 +146,6 @@ def run_training(argv=None):
                'model-tag': tf.constant([str(args.tag)])}
   )
 
-  # save model on GCS
-  logging.info("uploading to " + args.bucket + "/" + export_path)
-  storage_helper.upload_to_storage(args.bucket, export_path)
 
   if args.kfp:
     metrics_info = {
@@ -172,11 +164,8 @@ def run_training(argv=None):
     with open("/tmp/accuracy", "w") as output_file:
       output_file.write(str(float(test_acc)))
 
-  # remove local files
-  shutil.rmtree(export_path)
-  shutil.rmtree(temp_folder)
-
 
 if __name__ == '__main__':
   logging.basicConfig(level=logging.INFO)
+  tf.disable_v2_behavior()
   run_training()

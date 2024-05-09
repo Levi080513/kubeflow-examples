@@ -22,15 +22,15 @@ def parse_arguments(argv):
   """
   parser = argparse.ArgumentParser(description='Preprocessing')
 
-  parser.add_argument('--bucket',
-                      type=str,
-                      help='GCS bucket where preprocessed data is saved',
-                      default='<your-bucket-name>')
 
-  parser.add_argument('--cutoff_year',
+  parser.add_argument('--start_date',
                       type=str,
-                      help='Cutoff year for the stock data',
-                      default='2010')
+                      help='111',
+                      default='2010-10-01')
+  parser.add_argument('--end_date',
+                      type=str,
+                      help='222',
+                      default='2022-10-01')
 
   parser.add_argument('--kfp',
                       dest='kfp',
@@ -53,23 +53,17 @@ def run_preprocess(argv=None):
   """
   logging.info('starting preprocessing of data..')
   args = parse_arguments(sys.argv if argv is None else argv)
-  tickers = ['snp', 'nyse', 'djia', 'nikkei', 'hangseng', 'ftse', 'dax', 'aord']
-  closing_data = preprocess.load_data(tickers, args.cutoff_year)
+  closing_data = preprocess.load_data(args.start_date, args.end_date)
   time_series = preprocess.preprocess_data(closing_data)
   logging.info('preprocessing of data complete..')
 
-  logging.info('starting uploading of the preprocessed data on GCS..')
-  temp_folder = 'data'
+  logging.info('starting save data to pv')
+  temp_folder = '/data'
   if not os.path.exists(temp_folder):
     os.mkdir(temp_folder)
-  file_path = os.path.join(temp_folder, 'data_{}.csv'.format(args.cutoff_year))
+  file_path = os.path.join(temp_folder, 'data_{}_{}.csv'.format(args.start_date, args.end_date))
   time_series.to_csv(file_path, index=False)
-  storage_helper.upload_to_storage(args.bucket, temp_folder)
-  shutil.rmtree(temp_folder)
-  if args.kfp:
-    with open("/blob_path.txt", "w") as output_file:
-      output_file.write(file_path)
-  logging.info('upload of the preprocessed data on GCS completed..')
+  logging.info('save data to pv completed..')
 
 
 if __name__ == '__main__':

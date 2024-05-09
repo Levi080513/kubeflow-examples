@@ -15,7 +15,7 @@
 
 Tensorflow models are specified in classes with each specific model parameters.
 """
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 class FlatModel():
